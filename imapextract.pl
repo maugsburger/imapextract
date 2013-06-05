@@ -5,17 +5,14 @@ use strict;
 use v5.10;
 
 use Email::MIME 1.901;
-use IO::Socket::SSL;
 use Mail::IMAPClient;
-use POSIX qw/ strftime /;
 use Config::IniFiles;
-use Data::Dumper;
 
 my $exit = 0;
 my $cfg = Config::IniFiles->new( -file => "conf.ini" );
 
 my $imap = Mail::IMAPClient->new(
-    Debug       => 1,
+    Debug       => 0,
     User        => $cfg->val( "server", 'user'),
     Password    => $cfg->val( "server", 'pass'),
     Uid         => 1,
@@ -36,7 +33,6 @@ while($imap->IsConnected && !$exit){
     $SIG{'INT'} = $SIG{'TERM'} = \&use_next_exit;
 
     foreach my $id (@messages) {
-        sleep 100;
         die "$0: funky ID ($id)" unless $id =~ /\A\d+\z/;
 
         my $str = $imap->message_string($id)
