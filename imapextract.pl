@@ -8,8 +8,11 @@ use Email::MIME 1.901;
 use Mail::IMAPClient;
 use Config::IniFiles;
 
+# default values
+my $conffile = "imapextract.ini";
+
 my $exit = 0;
-my $cfg = Config::IniFiles->new( -file => "conf.ini" );
+my $cfg = Config::IniFiles->new( -file => $conffile );
 
 my $imap = Mail::IMAPClient->new(
     Debug       => 0,
