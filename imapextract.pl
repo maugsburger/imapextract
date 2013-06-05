@@ -7,27 +7,45 @@ use v5.10;
 use Email::MIME 1.901;
 use Mail::IMAPClient;
 use Config::IniFiles;
+use Getopt::Std;
+use File::Basename;
 
-# default values
-my $conffile = "imapextract.ini";
+
+my %opts;
+getopts('vo:c:', \%opts);
+
+my $conffile = $opts{c} ||  dirname($0)."/imapextract.ini";
 
 my $exit = 0;
 my $cfg = Config::IniFiles->new( -file => $conffile );
 
+if( ! $cfg->exists( "server", 'user' ) ||
+    ! $cfg->exists( "server", 'pass' ) ||
+    ! $cfg->exists( "server", 'host' ) ) {
+    die "missing config key";
+}
+
+my $verbose =  $opts{v} || $cfg->val('local', 'verbose', 0);
+my $outdir =  $opts{o} ||$cfg->val('local', 'outdir', '.');
+my $mailfolder = $cfg->val( "server", 'folder', 'INBOX');
+my $wait = $cfg->exists( "server", 'wait', 300);
+
+die "output directory '$outdir' does not exist" if ( ! -d $outdir );
+
 my $imap = Mail::IMAPClient->new(
-    Debug       => 0,
+    Debug       => $verbose,
     User        => $cfg->val( "server", 'user'),
     Password    => $cfg->val( "server", 'pass'),
     Uid         => 1,
     Server      => $cfg->val( "server", 'host'),
-    Port        => $cfg->val( "server", 'port'),
-    Ssl         => $cfg->val( "server", 'ssl'),
+    Port        => $cfg->val( "server", 'port', 993),
+    Ssl         => $cfg->val( "server", 'ssl', 1),
 );
 
 die "$0: login: $@" if $@;
 
-$imap->select("INBOX")
-    or die "$0: select INBOX: ", $imap->LastError, "\n";
+$imap->select($mailfolder)
+    or die "$0: select $mailfolder: ", $imap->LastError, "\n";
 
 while($imap->IsConnected && !$exit){
     my @messages = $imap->messages();
@@ -46,7 +64,7 @@ while($imap->IsConnected && !$exit){
                 my($part) = @_;
                 return unless $part->content_type =~ /\bname="([^"]+)"/;  # " grr...
 
-                my $name = "./" . time . $n++ . "-$1";
+                my $name = $outdir . "/" . time . $n++ . "-$1";
                 print "$0: writing $name...\n";
                 open my $fh, ">", $name
                     or die "$0: open $name: $!";
