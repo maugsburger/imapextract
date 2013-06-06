@@ -74,8 +74,18 @@ while($imap->IsConnected && !$exit){
                     or die "$0: print $name: $!";
                 close $fh
                     or warn "$0: close $name: $!";
+                if( $cfg->exists("local", "runafter") ){
+                    # FIXME needs some proper escaping for evil file names
+                    my $cmd = $cfg->val("local", "runafter") . ' ' . $name;
+                    if (system($cmd) == 0) {
+                        unlink ($name) if( $cfg->val("local", "deleteafterrun",0) == 1 );
+                    } else {
+                        warn "system '$cmd' failed: $?";
+                    }
+                }
             });
         $imap->delete_message($id);
+
     }
 
     $imap->expunge("INBOX") or die "Could not expunge: $@\n";
