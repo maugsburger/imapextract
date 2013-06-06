@@ -28,7 +28,7 @@ if( ! $cfg->exists( "server", 'user' ) ||
 my $verbose =  $opts{v} || $cfg->val('local', 'verbose', 0);
 my $outdir =  $opts{o} ||$cfg->val('local', 'outdir', '.');
 my $mailfolder = $cfg->val( "server", 'folder', 'INBOX');
-my $wait = $cfg->exists( "server", 'wait', 300);
+my $wait = $cfg->val( "server", 'wait', 300);
 
 die "output directory '$outdir' does not exist" if ( ! -d $outdir );
 
